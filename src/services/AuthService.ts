@@ -47,7 +47,7 @@ export class AuthService {
       }
 
     } catch (error) {
-      return { status_code: 500, message: error }
+      return { status_code: 500, message: error.message }
     }
   }
 
