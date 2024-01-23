@@ -9,6 +9,7 @@ export class AuthController {
   }
 
   public static async login(req: Request, res: Response) {
-    
+    const loginResponse = await AuthService.loginUser(req, res)
+    return res.status(loginResponse.status_code).json(loginResponse) 
   }
 }
