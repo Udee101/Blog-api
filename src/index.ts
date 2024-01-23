@@ -2,6 +2,7 @@ import { AppDataSource } from "./data-source";
 import * as express from "express";
 import * as cors from "cors";
 import * as dotenv from "dotenv";
+import router from "./routes/routes";
 
 dotenv.config()
 
@@ -15,6 +16,7 @@ const app = express();
 app.use(cors({origin : '*'}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }))
+app.use('/api/v1', router)
 
 app.listen(PORT, ()=> {
     console.log(`server is running on port ${PORT}`);
