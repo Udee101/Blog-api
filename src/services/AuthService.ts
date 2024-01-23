@@ -2,14 +2,13 @@ import { validationResult } from "express-validator";
 import { AppDataSource } from "../data-source"
 import { User } from "../entity/User"
 import * as bcrypt from "bcrypt"
-import { ApiResponse } from "../utils/ApiRespons";
-
+import * as jwt from "jsonwebtoken"
 export class AuthService {
   private static userRepository = AppDataSource.getRepository(User);
 
   public static async registerUser(data: any) {
     try {
-      // validate all fields in the registration field and return the errors if the be any
+      // validate all fields in the registration form and return the errors if there be any
       const errors = validationResult(data);
       if (!errors.isEmpty()) {
         return { status_code: 422, message: errors.mapped() }/*.mapped() returns only the first error if a field has multiple errors */
@@ -41,7 +40,7 @@ export class AuthService {
       await this.userRepository.save(user)
 
       return {
-        status_code: 200,
+        status_code: 201,
         message: 'Registration Successful',
         user: user
       }
@@ -51,11 +50,51 @@ export class AuthService {
     }
   }
 
-  public static async loginUser(data: any) {
+  public static async loginUser(data: any, res: any) {
     try {
+      // validate all fields in the login form and return there errors if the be any
+      const errors = validationResult(data);
+      if (!errors.isEmpty()) {
+        return { status_code: 422, message: errors.mapped() }/*.mapped() returns only the first error if a field has multiple errors */
+      } 
+
+      const user = await this.userRepository.findOne({
+        where: [
+          { username: data.body.username_or_email },
+          { email: data.body.username_or_email },
+        ]
+      })
+
+      if (!user) {
+        return { status_code: 422, message: 'Invalid credentials' }
+      }
       
+      const verifyPassword = await bcrypt.compare(data.body.password, user.password)
+      if (!verifyPassword) {
+        return { status_code: 422, message: 'Incorrect Password' }
+      }
+
+      // create access token using jsonwebtoken
+      const accessToken = jwt.sign({ id: user.id }, 'secret-key', { expiresIn: '10s' })
+
+      // create refresh token using jsonwebtoken
+      const refreshToken = jwt.sign({ id: user.id }, 'secret-key', { expiresIn: '1w' })
+
+      // store tokens as cookies
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+      })
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      })
+
+      return { status_code: 200, message: 'Login Successful' }
+
     } catch (error) {
-      
+      return { status_code: 500, message: error.message }
     }
   }
 }

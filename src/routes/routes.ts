@@ -6,6 +6,6 @@ import { ValidationMiddleware } from "../middleware/ValidationMiddleware"
 const router = express.Router()
 
 router.post('/register', ValidationMiddleware.userRegistrationValidation, AuthController.register)
-router.get('/login', AuthController.login)
+router.post('/login', ValidationMiddleware.userLoginValidation, AuthController.login)
 
 export default router

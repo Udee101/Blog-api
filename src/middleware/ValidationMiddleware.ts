@@ -21,5 +21,15 @@ export class ValidationMiddleware {
     body('password')
       .notEmpty().withMessage('Password field is required.')
       .isString().trim()
+  ];
+
+  public static userLoginValidation = [
+    body('username_or_email')
+      .notEmpty().withMessage('Username or Email is required.')
+      .isString().trim(),
+
+    body('password')
+      .notEmpty().withMessage('Password field is required.')
+      .isString().trim()
   ]
 } 
