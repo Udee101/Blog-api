@@ -158,7 +158,7 @@ export class PostService {
     try {
       const post = await this.postRepository.findOneBy({ id: postId })
       if (!post) {
-        return  { status_code: 404, message: "A post with ithis id does not exist" }
+        return  { status_code: 404, message: "A post with this id does not exist" }
       }
 
       await this.postRepository.remove(post)
