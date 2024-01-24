@@ -31,5 +31,19 @@ export class ValidationMiddleware {
     body('password')
       .notEmpty().withMessage('Password field is required.')
       .isString().trim()
+  ];
+
+  public static postCreationValidation = [
+    body('title')
+    .notEmpty().withMessage('Title field is required.')
+    .isString().trim(),
+
+    body('content')
+      .notEmpty().withMessage('Content field is required.')
+      .isString().trim(),
+      
+    body('author')
+      .notEmpty().withMessage('Email field is required.')
+      .isEmail().withMessage('Email must be a valid email'),
   ]
 } 

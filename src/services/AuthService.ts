@@ -3,6 +3,9 @@ import { AppDataSource } from "../data-source"
 import { User } from "../entity/User"
 import * as bcrypt from "bcrypt"
 import * as jwt from "jsonwebtoken"
+import { config } from "dotenv";
+
+config()
 export class AuthService {
   private static userRepository = AppDataSource.getRepository(User);
 
@@ -46,7 +49,8 @@ export class AuthService {
       }
 
     } catch (error) {
-      return { status_code: 500, message: error.message }
+      console.error(error);
+      return { status_code: 500, message: "An error occurred while registering user" }
     }
   }
 
@@ -74,27 +78,22 @@ export class AuthService {
         return { status_code: 422, message: 'Incorrect Password' }
       }
 
-      // create access token using jsonwebtoken
-      const accessToken = jwt.sign({ id: user.id }, 'secret-key', { expiresIn: '10s' })
+      // generate access token using jsonwebtoken
+      const accessToken = jwt.sign({ id: user.id }, process.env.ACCESSTOKEN_SECRET, { expiresIn: '15 minutes' })
 
-      // create refresh token using jsonwebtoken
-      const refreshToken = jwt.sign({ id: user.id }, 'secret-key', { expiresIn: '1w' })
+      // generate refresh token using jsonwebtoken
+      const refreshToken = jwt.sign({ id: user.id }, process.env.REFRESHTOKEN_SECRET, { expiresIn: '3d' })
 
-      // store tokens as cookies
-      res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 1 day
-      })
-
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-      })
-
-      return { status_code: 200, message: 'Login Successful' }
+      return { 
+        status_code: 200, 
+        message: 'Login Successful', 
+        access_token: accessToken,
+        refresh_token: refreshToken
+      }
 
     } catch (error) {
-      return { status_code: 500, message: error.message }
+      console.error(error);
+      return { status_code: 500, message: "An error occurred during user login" }
     }
   }
 }
