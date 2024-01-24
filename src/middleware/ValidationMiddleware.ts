@@ -43,7 +43,7 @@ export class ValidationMiddleware {
       .isString().trim(),
       
     body('author')
-      .notEmpty().withMessage('Email field is required.')
-      .isEmail().withMessage('Email must be a valid email'),
+      .notEmpty().withMessage('Author field is required.')
+      .isString().trim(),
   ]
 } 
