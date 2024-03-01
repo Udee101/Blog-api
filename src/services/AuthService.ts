@@ -25,28 +25,29 @@ export class AuthService {
         ]
       })
 
-      if (existingUser) {
+      if (!existingUser) {
+        const salt = await bcrypt.genSalt()
+        const hashedPassword = await bcrypt.hash(data.body.password, salt)
+        
+        const user = new User()
+        user.first_name = data.body.first_name
+        user.last_name = data.body.last_name
+        user.username = data.body.username
+        user.email = data.body.email
+        user.phone = data.body.phone
+        user.password = hashedPassword
+  
+        await this.userRepository.save(user)
+        
+        return {
+          status_code: 201,
+          message: "Registration Successfull!",
+          user: user
+        } 
+      } else {
         return Errors.USERNAME_OR_EMAIL_ALREADY_EXISTS
       }
 
-      const salt = await bcrypt.genSalt()
-      const hashedPassword = await bcrypt.hash(data.body.password, salt)
-      
-      const user = new User()
-      user.first_name = data.body.first_name
-      user.last_name = data.body.last_name
-      user.username = data.body.username
-      user.email = data.body.email
-      user.phone = data.body.phone
-      user.password = hashedPassword
-
-      await this.userRepository.save(user)
-      
-      return {
-        status_code: 201,
-        message: "Registration Successfull!",
-        user: user
-      } 
     } catch (error:any) {
       return Errors.USER_REGISTRATION_SERVER_ERROR
     }
