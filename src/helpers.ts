@@ -1,4 +1,4 @@
-export const paginateResponse = (data: any[], page: number, limit: number, totalCount: number) => {
+export const paginateResponse = (data: any[], page: number, limit: number, totalCount: number): object => {
 
   const lastPage =  Math.ceil(totalCount / limit)
 
