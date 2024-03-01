@@ -1,15 +1,16 @@
-import { Request, Response } from "express";
+import * as dotenv from "dotenv"
+import { Request, Response } from "express"
 import { AuthService } from "../../../services/AuthService";
 
+dotenv.config({ path: ".env" });
 export class AuthController {
-  public static async register(req: Request, res: Response) {
+  public static register = async(req:Request, res:Response) => {
+    const regResult = await AuthService.registerUser(req)
+    return res.status(regResult.status_code).json(regResult)
+  };
 
-    const registrationResponse = await AuthService.registerUser(req)
-    return res.status(registrationResponse.status_code).json(registrationResponse)
-  }
-
-  public static async login(req: Request, res: Response) {
-    const loginResponse = await AuthService.loginUser(req, res)
-    return res.status(loginResponse.status_code).json(loginResponse) 
+  public static login = async(req:Request, res:Response) => {
+    const login = await AuthService.userLogin(req)
+    return res.status(login.status_code).json(login)
   }
 }

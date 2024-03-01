@@ -1,23 +1,23 @@
-import { validationResult } from "express-validator";
+import { validationResult } from "express-validator"
 import { AppDataSource } from "../data-source"
-import { User } from "../entity/User"
+import { User } from "../model/User"
 import * as bcrypt from "bcrypt"
 import * as jwt from "jsonwebtoken"
+import { Errors } from "../values/Errors"
 import { config } from "dotenv";
 
 config()
+
 export class AuthService {
-  private static userRepository = AppDataSource.getRepository(User);
+  private static userRepository = AppDataSource.getRepository(User)
 
   public static async registerUser(data: any) {
     try {
-      // validate all fields in the registration form and return the errors if there be any
       const errors = validationResult(data);
       if (!errors.isEmpty()) {
-        return { status_code: 422, message: errors.mapped() }/*.mapped() returns only the first error if a field has multiple errors */
+        return { status_code: 400, error: errors.array() }
       }
 
-      // check if the email or username has been used by another user
       const existingUser = await this.userRepository.find({
         where: [
           { username: data.body.username },
@@ -26,74 +26,66 @@ export class AuthService {
       })
 
       if (existingUser) {
-        return { status_code: 422, message: 'A user with this email or username already exists' }
+        return Errors.USERNAME_OR_EMAIL_ALREADY_EXISTS
       }
 
-      // hash password
       const salt = await bcrypt.genSalt()
       const hashedPassword = await bcrypt.hash(data.body.password, salt)
-
+      
       const user = new User()
       user.first_name = data.body.first_name
       user.last_name = data.body.last_name
       user.username = data.body.username
       user.email = data.body.email
+      user.phone = data.body.phone
       user.password = hashedPassword
 
       await this.userRepository.save(user)
-
+      
       return {
         status_code: 201,
-        message: 'Registration Successful',
+        message: "Registration Successfull!",
         user: user
-      }
-
-    } catch (error) {
-      console.error(error);
-      return { status_code: 500, message: "An error occurred while registering user" }
+      } 
+    } catch (error:any) {
+      return Errors.USER_REGISTRATION_SERVER_ERROR
     }
   }
 
-  public static async loginUser(data: any, res: any) {
+  public static async userLogin(data: any) {
     try {
-      // validate all fields in the login form and return there errors if the be any
-      const errors = validationResult(data);
+      const errors = validationResult(data)
       if (!errors.isEmpty()) {
-        return { status_code: 422, message: errors.mapped() }/*.mapped() returns only the first error if a field has multiple errors */
-      } 
-
+        return { status_code: 400, error: errors.array() }
+      }
+  
       const user = await this.userRepository.findOne({
         where: [
-          { username: data.body.username_or_email },
-          { email: data.body.username_or_email },
+          { username: data.body.usernameOrEmail },
+          { email: data.body.usernameOrEmail }
         ]
       })
-
+  
       if (!user) {
-        return { status_code: 422, message: 'Invalid credentials' }
+        return Errors.INVALID_CREDENTIALS
       }
-      
-      const verifyPassword = await bcrypt.compare(data.body.password, user.password)
-      if (!verifyPassword) {
-        return { status_code: 422, message: 'Incorrect Password' }
+  
+      const passwordCheck = await bcrypt.compare(data.body.password, user.password)
+      if (!passwordCheck) {
+        return Errors.INVALID_CREDENTIALS
       }
-
-      // generate access token using jsonwebtoken
-      const accessToken = jwt.sign({ id: user.id }, process.env.ACCESSTOKEN_SECRET, { expiresIn: '15 minutes' })
-
-      // generate refresh token using jsonwebtoken
-      const refreshToken = jwt.sign({ id: user.id }, process.env.REFRESHTOKEN_SECRET, { expiresIn: '3d' })
-
-      return { 
-        status_code: 200, 
-        message: 'Login Successful', 
-        access_token: accessToken,
-        refresh_token: refreshToken
+  
+      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: 60 * 20 })
+  
+      return {
+        status_code: 200,
+        message: "Login Successfull",
+        user: user,
+        token: token
       }
 
     } catch (error) {
-      console.error(error);
-      return { status_code: 500, message: "An error occurred during user login" }
+      return Errors.USER_LOGIN_SERVER_ERROR
     }
   }
 }
