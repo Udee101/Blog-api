@@ -18,7 +18,7 @@ export class AuthService {
         return { status_code: 400, error: errors.array() }
       }
 
-      const existingUser = await this.userRepository.find({
+      const existingUser = await this.userRepository.findOne({
         where: [
           { username: data.body.username },
           { email: data.body.email }
